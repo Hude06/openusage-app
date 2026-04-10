@@ -136,7 +136,7 @@ export function SettingsModal({ open, onClose }: Props) {
 
               {/* Version */}
               <p className="label-sm text-center" style={{ color: 'var(--text-disabled)' }}>
-                TOKENPULSE V1.0.0
+                OPEN USAGE V1.0.0
               </p>
             </div>
           ) : (

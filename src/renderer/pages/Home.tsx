@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
 import type { AllData, ClaudeData, CodexData, WindowUsage } from '@shared/types'
 import { SegmentedBar } from '../components/SegmentedBar'
+import { Sparkline } from '../components/Sparkline'
 import { CountdownTimer } from '../components/CountdownTimer'
 import { StatRow } from '../components/StatRow'
 import { AuthBadge } from '../components/AuthBadge'
 import { SettingsModal } from '../components/SettingsModal'
+import { useHistory } from '../hooks/useHistory'
 import { Settings } from 'lucide-react'
 import { fmt, fmtCost } from '../lib/utils'
 
@@ -95,6 +97,7 @@ function ModelRow({
 
 // ─── Generic service card ─────────────────────────────────
 function ServiceCard({
+  provider,
   name,
   planLabel,
   sessionWindow,
@@ -104,6 +107,7 @@ function ServiceCard({
   fadeClass,
   children,
 }: {
+  provider: 'claude' | 'codex'
   name: string
   planLabel: string
   sessionWindow: WindowUsage | null
@@ -116,6 +120,9 @@ function ServiceCard({
   const authIssue = authStatus && authStatus !== 'ok'
   const heroWindow = sessionWindow ?? weeklyWindow
   const heroRemaining = heroWindow ? 100 - heroWindow.usedPercent : null
+
+  const sessionHistory = useHistory(provider, 'session')
+  const weeklyHistory = useHistory(provider, 'weekly')
 
   return (
     <div
@@ -177,10 +184,11 @@ function ServiceCard({
         <div className="label-sm mt-1">REMAINING</div>
       </div>
 
-      {/* Window bars */}
+      {/* Window bars + sparklines */}
       <div className="space-y-3 mb-5">
         <WindowRow window={sessionWindow} label="SESSION" />
         <WindowRow window={weeklyWindow} label="WEEKLY" />
+        <Sparkline points={[...sessionHistory, ...weeklyHistory]} height={28} className="mt-1 opacity-60" />
       </div>
 
       {/* Service-specific stats */}
@@ -223,7 +231,7 @@ export function Home({ data, lastUpdated }: Props) {
       {/* Header */}
       <div className="fade-1 shrink-0 flex items-center justify-between px-5 pb-4">
         <span className="label" style={{ color: 'var(--text-disabled)' }}>
-          TOKENPULSE
+          OPEN USAGE
         </span>
         <button
           data-testid="settings-trigger"
@@ -239,6 +247,7 @@ export function Home({ data, lastUpdated }: Props) {
       <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
         {/* Claude */}
         <ServiceCard
+          provider="claude"
           name="CLAUDE"
           planLabel="MAX"
           sessionWindow={claude?.session ?? null}
@@ -266,6 +275,7 @@ export function Home({ data, lastUpdated }: Props) {
 
         {/* Codex */}
         <ServiceCard
+          provider="codex"
           name="CODEX"
           planLabel="PRO"
           sessionWindow={codex?.session ?? null}
