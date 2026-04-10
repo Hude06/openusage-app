@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+release/
+
+# Database files
+*.db
+*.db-journal
+
+# Test output
+tests/screenshots/
+tests/results.json
+test-results/
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Electron
+*.dmg
+*.zip

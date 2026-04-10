@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Nothing Design System Tokens ── */
+:root {
+  --black: #000000;
+  --surface: #111111;
+  --surface-raised: #1A1A1A;
+  --border: #222222;
+  --border-visible: #333333;
+  --text-disabled: #666666;
+  --text-secondary: #999999;
+  --text-primary: #E8E8E8;
+  --text-display: #FFFFFF;
+  --accent: #D71921;
+  --accent-subtle: rgba(215, 25, 33, 0.15);
+  --success: #4A9E5C;
+  --warning: #D4A843;
+  --interactive: #5B9BF6;
+
+  /* Spacing (8px base) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --duration-micro: 150ms;
+  --duration-transition: 250ms;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--black);
+}
+
+body {
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', 'DM Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* ── Drag regions ── */
+.drag-region { -webkit-app-region: drag; }
+.no-drag { -webkit-app-region: no-drag; }
+
+/* ── Scrollbar — near invisible ── */
+::-webkit-scrollbar { width: 2px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-visible); border-radius: 1px; }
+
+/* ── Entrance animation (fade, not slide — Nothing principle) ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fade-1 { animation: fadeIn var(--duration-transition) var(--ease-out) both; }
+.fade-2 { animation: fadeIn var(--duration-transition) 80ms var(--ease-out) both; }
+.fade-3 { animation: fadeIn var(--duration-transition) 160ms var(--ease-out) both; }
+.fade-4 { animation: fadeIn var(--duration-transition) 240ms var(--ease-out) both; }
+
+/* ── Nothing typography utilities ── */
+.label {
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.label-sm {
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.display {
+  font-family: 'Doto', 'Space Mono', monospace;
+  font-weight: 400;
+  line-height: 1.0;
+  letter-spacing: -0.02em;
+  color: var(--text-display);
+}
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: var(--border);
+}
