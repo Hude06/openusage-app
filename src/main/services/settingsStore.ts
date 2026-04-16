@@ -11,6 +11,26 @@ const defaults: AppSettings = {
   codexDataPath: path.join(os.homedir(), '.codex'),
   refreshIntervalMs: 60000,
   windowBounds: null,
+  minimizeToTray: true,
+  notificationsEnabled: true,
+  notificationThresholds: [75, 90, 95],
+  lifetime: {
+    claudeTokens: 0,
+    codexTokens: 0,
+    claudeCost: 0,
+    lastDate: null,
+    lastDayClaudeTokens: 0,
+    lastDayCodexTokens: 0,
+    lastDayClaudeCost: 0,
+  },
+  leaderboard: {
+    enabled: false,
+    githubToken: null,
+    githubLogin: null,
+    githubAvatarUrl: null,
+    userId: null,
+    lastSubmittedDate: null,
+  },
 }
 
 function load(): AppSettings {

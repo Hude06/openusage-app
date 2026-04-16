@@ -62,16 +62,56 @@ export interface CodexThread {
   cwd: string
 }
 
+export interface LifetimeStats {
+  claudeTokens: number
+  codexTokens: number
+  claudeCost: number
+  lastDate: string | null
+  lastDayClaudeTokens: number
+  lastDayCodexTokens: number
+  lastDayClaudeCost: number
+}
+
+export interface LeaderboardSettings {
+  enabled: boolean
+  githubToken: string | null
+  githubLogin: string | null
+  githubAvatarUrl: string | null
+  userId: string | null
+  lastSubmittedDate: string | null
+}
+
+export interface LeaderboardEntry {
+  rank: number
+  githubLogin: string
+  avatarUrl: string
+  totalTokens: number
+  claudeTokens: number
+  codexTokens: number
+}
+
+export interface LeaderboardResponse {
+  period: string
+  entries: LeaderboardEntry[]
+  updatedAt: string
+}
+
 export interface AppSettings {
   claudeDataPath: string
   codexDataPath: string
   refreshIntervalMs: number
   windowBounds: { x: number; y: number; width: number; height: number } | null
+  minimizeToTray: boolean
+  notificationsEnabled: boolean
+  notificationThresholds: number[]
+  leaderboard: LeaderboardSettings
+  lifetime: LifetimeStats
 }
 
 export interface AllData {
   claude: ClaudeData | null
   codex: CodexData | null
+  lifetime: LifetimeStats | null
 }
 
 export interface HistoryPoint {

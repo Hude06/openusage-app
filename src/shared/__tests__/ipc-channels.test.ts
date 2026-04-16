@@ -8,10 +8,14 @@ describe('IPC channels', () => {
         "AUTH_REFRESH_CLAUDE": "auth:refreshClaude",
         "AUTH_REFRESH_CODEX": "auth:refreshCodex",
         "HISTORY_GET_RANGE": "history:getRange",
+        "LEADERBOARD_AUTH": "leaderboard:auth",
+        "LEADERBOARD_LOGOUT": "leaderboard:logout",
+        "LEADERBOARD_SUBMIT": "leaderboard:submit",
         "SETTINGS_GET": "settings:get",
         "SETTINGS_SAVE": "settings:save",
         "SHELL_OPEN_URL": "shell:openUrl",
         "USAGE_DATA_UPDATED": "usage:dataUpdated",
+        "USAGE_FORCE_REFRESH": "usage:forceRefresh",
         "USAGE_GET_ALL": "usage:getAll",
       }
     `)

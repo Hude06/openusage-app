@@ -3,11 +3,43 @@ import { readClaudeData } from './claudeReader'
 import { readCodexData } from './codexReader'
 import { writeSnapshot } from './historyDb'
 import { settingsStore } from './settingsStore'
+import { checkThresholds, detectResets } from './notifications'
+import { submitDailyUsage } from './leaderboardService'
 import { IPC } from '../../shared/ipc-channels'
-import type { AllData } from '../../shared/types'
+import type { AllData, LifetimeStats } from '../../shared/types'
 
 let intervalId: ReturnType<typeof setInterval> | null = null
-let lastData: AllData = { claude: null, codex: null }
+let lastData: AllData = { claude: null, codex: null, lifetime: null }
+
+function updateLifetime(data: AllData): LifetimeStats {
+  const settings = settingsStore.load()
+  const prev = { ...settings.lifetime }
+  const today = new Date().toISOString().slice(0, 10)
+
+  const claudeToday = data.claude?.tokensToday ?? 0
+  const codexToday = data.codex?.creditsUsedToday ?? 0
+  const claudeCostToday = data.claude?.costToday ?? 0
+
+  if (prev.lastDate && prev.lastDate !== today) {
+    // New day — finalize previous day's totals into lifetime
+    prev.claudeTokens += prev.lastDayClaudeTokens
+    prev.codexTokens += prev.lastDayCodexTokens
+    prev.claudeCost += prev.lastDayClaudeCost
+  }
+
+  const updated: LifetimeStats = {
+    claudeTokens: prev.claudeTokens,
+    codexTokens: prev.codexTokens,
+    claudeCost: prev.claudeCost,
+    lastDate: today,
+    lastDayClaudeTokens: claudeToday,
+    lastDayCodexTokens: codexToday,
+    lastDayClaudeCost: claudeCostToday,
+  }
+
+  settingsStore.save({ lifetime: updated })
+  return updated
+}
 
 export function getLastData(): AllData {
   return lastData
@@ -23,7 +55,11 @@ async function fetchAll(): Promise<AllData> {
   const data: AllData = {
     claude: claude.status === 'fulfilled' ? claude.value : null,
     codex: codex.status === 'fulfilled' ? codex.value : null,
+    lifetime: null,
   }
+
+  // Accumulate lifetime stats
+  data.lifetime = updateLifetime(data)
 
   // Persist to history DB
   if (data.claude) {
@@ -38,7 +74,25 @@ async function fetchAll(): Promise<AllData> {
     writeSnapshot('codex', 'weekly', data.codex.weekly.usedPercent, data.codex.weekly.resetsAt)
   }
 
+  // Check notifications and window resets
+  detectResets(lastData, data)
+  checkThresholds(lastData, data, settings)
+
   lastData = data
+
+  // Auto-submit to leaderboard if enabled
+  const { leaderboard } = settings
+  if (leaderboard?.enabled && leaderboard.githubToken) {
+    const today = new Date().toISOString().slice(0, 10)
+    if (leaderboard.lastSubmittedDate !== today) {
+      submitDailyUsage(leaderboard.githubToken, data)
+        .then(() => settingsStore.save({
+          leaderboard: { ...leaderboard, lastSubmittedDate: today },
+        }))
+        .catch(() => {}) // silent failure, retry next cycle
+    }
+  }
+
   return data
 }
 

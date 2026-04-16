@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { AllData } from '@shared/types'
 
 export function useUsageData() {
-  const [data, setData] = useState<AllData>({ claude: null, codex: null })
+  const [data, setData] = useState<AllData>({ claude: null, codex: null, lifetime: null })
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {

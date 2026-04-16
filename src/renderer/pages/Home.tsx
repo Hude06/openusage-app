@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import type { AllData, ClaudeData, CodexData, WindowUsage } from '@shared/types'
+import React, { useState, useEffect } from 'react'
+import type { AllData, ClaudeData, CodexData, WindowUsage, LifetimeStats } from '@shared/types'
 import { SegmentedBar } from '../components/SegmentedBar'
 import { Sparkline } from '../components/Sparkline'
 import { CountdownTimer } from '../components/CountdownTimer'
@@ -7,6 +7,7 @@ import { StatRow } from '../components/StatRow'
 import { AuthBadge } from '../components/AuthBadge'
 import { SettingsModal } from '../components/SettingsModal'
 import { useHistory } from '../hooks/useHistory'
+import { projectCost } from '../lib/projection'
 import { Settings } from 'lucide-react'
 import { fmt, fmtCost } from '../lib/utils'
 
@@ -205,8 +206,94 @@ function ServiceCard({
 }
 
 // ─── Main Home component ──────────────────────────────────
+// ─── Claude stats with cost projection ────────────────────
+function ClaudeStats({ data, lifetime }: { data: ClaudeData; lifetime: LifetimeStats | null }) {
+  const projected = useProjectedCost(
+    data.session.resetsAt,
+    data.session.windowMinutes,
+    data.costToday
+  )
+
+  return (
+    <>
+      <StatRow
+        label="TODAY"
+        value={fmtCost(data.costToday)}
+        secondaryValue={`${fmt(data.tokensToday)} tok`}
+      />
+      {projected != null && (
+        <StatRow
+          label="PROJECTED"
+          value={fmtCost(projected)}
+          secondaryValue="this window"
+          statusColor="var(--text-disabled)"
+        />
+      )}
+      {data.opus && (
+        <ModelRow label="OPUS" usedPercent={data.opus.usedPercent} />
+      )}
+      {data.sonnet && (
+        <ModelRow label="SONNET" usedPercent={data.sonnet.usedPercent} />
+      )}
+      {lifetime && (
+        <StatRow
+          label="LIFETIME"
+          value={fmt(lifetime.claudeTokens + data.tokensToday)}
+          secondaryValue={fmtCost(lifetime.claudeCost + data.costToday)}
+          statusColor="var(--text-disabled)"
+        />
+      )}
+    </>
+  )
+}
+
+// ─── Codex stats with credits ─────────────────────────────
+function CodexStats({ data, lifetime }: { data: CodexData; lifetime: LifetimeStats | null }) {
+  return (
+    <>
+      {data.creditsRemaining != null && (
+        <StatRow
+          label="CREDITS"
+          value={`$${data.creditsRemaining.toFixed(2)}`}
+          secondaryValue="remaining"
+          statusColor={
+            data.creditsRemaining < 5 ? 'var(--accent)'
+            : data.creditsRemaining < 20 ? 'var(--warning)'
+            : 'var(--text-primary)'
+          }
+        />
+      )}
+      {data.creditsUsedToday > 0 && (
+        <StatRow label="TODAY" value={`$${data.creditsUsedToday.toFixed(2)}`} />
+      )}
+      {lifetime && (
+        <StatRow
+          label="LIFETIME"
+          value={fmt(lifetime.codexTokens + data.creditsUsedToday)}
+          statusColor="var(--text-disabled)"
+        />
+      )}
+    </>
+  )
+}
+
+// ─── Cost projection helper ───────────────────────────────
+function useProjectedCost(resetsAt: string | null, windowMinutes: number, costSoFar: number): number | null {
+  if (!resetsAt) return null
+  const windowMs = windowMinutes * 60 * 1000
+  const resetTime = new Date(resetsAt).getTime()
+  const windowStart = resetTime - windowMs
+  const elapsedMs = Date.now() - windowStart
+  return projectCost(costSoFar, elapsedMs, windowMs)
+}
+
 export function Home({ data, lastUpdated }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false)
+
+  // Listen for Cmd+, from application menu
+  useEffect(() => {
+    return window.tokenPulse.onMenuOpenSettings(() => setSettingsOpen(true))
+  }, [])
 
   const timeAgo = React.useMemo(() => {
     if (!lastUpdated) return null
@@ -257,19 +344,7 @@ export function Home({ data, lastUpdated }: Props) {
           fadeClass="fade-1"
         >
           {claude && (
-            <>
-              <StatRow
-                label="TODAY"
-                value={fmtCost(claude.costToday)}
-                secondaryValue={`${fmt(claude.tokensToday)} tok`}
-              />
-              {claude.opus && (
-                <ModelRow label="OPUS" usedPercent={claude.opus.usedPercent} />
-              )}
-              {claude.sonnet && (
-                <ModelRow label="SONNET" usedPercent={claude.sonnet.usedPercent} />
-              )}
-            </>
+            <ClaudeStats data={claude} lifetime={data.lifetime} />
           )}
         </ServiceCard>
 
@@ -285,23 +360,7 @@ export function Home({ data, lastUpdated }: Props) {
           fadeClass="fade-2"
         >
           {codex && (
-            <>
-              {codex.creditsRemaining != null && (
-                <StatRow
-                  label="CREDITS"
-                  value={`$${codex.creditsRemaining.toFixed(2)}`}
-                  secondaryValue="remaining"
-                  statusColor={
-                    codex.creditsRemaining < 5 ? 'var(--accent)'
-                    : codex.creditsRemaining < 20 ? 'var(--warning)'
-                    : 'var(--text-primary)'
-                  }
-                />
-              )}
-              {codex.creditsUsedToday > 0 && (
-                <StatRow label="TODAY" value={`$${codex.creditsUsedToday.toFixed(2)}`} />
-              )}
-            </>
+            <CodexStats data={codex} lifetime={data.lifetime} />
           )}
         </ServiceCard>
       </div>
