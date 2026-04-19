@@ -7,7 +7,7 @@ export function useUsageData() {
 
   const refresh = useCallback(async () => {
     try {
-      const result = await window.tokenPulse.getAll()
+      const result = await window.tokenUsage.getAll()
       setData(result)
     } catch (e) {
       console.error('Failed to fetch usage data', e)
@@ -18,7 +18,7 @@ export function useUsageData() {
 
   useEffect(() => {
     refresh()
-    const unsub = window.tokenPulse.onDataUpdated((updated) => {
+    const unsub = window.tokenUsage.onDataUpdated((updated) => {
       setData(updated)
       setLoading(false)
     })

@@ -66,10 +66,22 @@ export interface LifetimeStats {
   claudeTokens: number
   codexTokens: number
   claudeCost: number
+  codexCost?: number
   lastDate: string | null
   lastDayClaudeTokens: number
   lastDayCodexTokens: number
   lastDayClaudeCost: number
+  installedAt?: string
+  lastScanAt?: string | null
+  scanning?: boolean
+  scanProgress?: {
+    phase: 'discover' | 'parse' | 'idle'
+    filesTotal: number
+    filesDone: number
+    eventsInserted: number
+    bytesRead: number
+    startedAt: number
+  }
 }
 
 export interface LeaderboardSettings {

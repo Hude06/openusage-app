@@ -5,40 +5,64 @@ import { writeSnapshot } from './historyDb'
 import { settingsStore } from './settingsStore'
 import { checkThresholds, detectResets } from './notifications'
 import { submitDailyUsage } from './leaderboardService'
+import { getSummary as getLifetimeSummary } from './lifetime'
 import { IPC } from '../../shared/ipc-channels'
 import type { AllData, LifetimeStats } from '../../shared/types'
 
 let intervalId: ReturnType<typeof setInterval> | null = null
 let lastData: AllData = { claude: null, codex: null, lifetime: null }
 
-function updateLifetime(data: AllData): LifetimeStats {
+function buildLifetime(): LifetimeStats {
   const settings = settingsStore.load()
-  const prev = { ...settings.lifetime }
-  const today = new Date().toISOString().slice(0, 10)
-
-  const claudeToday = data.claude?.tokensToday ?? 0
-  const codexToday = data.codex?.creditsUsedToday ?? 0
-  const claudeCostToday = data.claude?.costToday ?? 0
-
-  if (prev.lastDate && prev.lastDate !== today) {
-    // New day — finalize previous day's totals into lifetime
-    prev.claudeTokens += prev.lastDayClaudeTokens
-    prev.codexTokens += prev.lastDayCodexTokens
-    prev.claudeCost += prev.lastDayClaudeCost
+  const fallback = settings.lifetime ?? {
+    claudeTokens: 0,
+    codexTokens: 0,
+    claudeCost: 0,
+    lastDate: null,
+    lastDayClaudeTokens: 0,
+    lastDayCodexTokens: 0,
+    lastDayClaudeCost: 0,
   }
 
-  const updated: LifetimeStats = {
-    claudeTokens: prev.claudeTokens,
-    codexTokens: prev.codexTokens,
-    claudeCost: prev.claudeCost,
-    lastDate: today,
-    lastDayClaudeTokens: claudeToday,
-    lastDayCodexTokens: codexToday,
-    lastDayClaudeCost: claudeCostToday,
+  let summary
+  try {
+    summary = getLifetimeSummary()
+  } catch {
+    return fallback
   }
 
-  settingsStore.save({ lifetime: updated })
-  return updated
+  const isInitial = summary.scanning && summary.claudeTokens === 0 && summary.codexTokens === 0
+  const claudeTokens = isInitial ? fallback.claudeTokens : summary.claudeTokens
+  const codexTokens = isInitial ? fallback.codexTokens : summary.codexTokens
+  const claudeCost = isInitial ? fallback.claudeCost : summary.claudeCost
+  const codexCost = isInitial ? (fallback.codexCost ?? 0) : summary.codexCost
+
+  const merged: LifetimeStats = {
+    claudeTokens,
+    codexTokens,
+    claudeCost,
+    codexCost,
+    lastDate: new Date().toISOString().slice(0, 10),
+    lastDayClaudeTokens: fallback.lastDayClaudeTokens,
+    lastDayCodexTokens: fallback.lastDayCodexTokens,
+    lastDayClaudeCost: fallback.lastDayClaudeCost,
+    installedAt: summary.installedAt,
+    lastScanAt: summary.lastScanAt,
+    scanning: summary.scanning,
+    scanProgress: summary.scanProgress,
+  }
+
+  // Persist the canonical totals so fallback stays in sync when the DB is unavailable
+  if (!isInitial) {
+    settingsStore.save({
+      lifetime: {
+        ...merged,
+        // Drop the runtime-only fields before writing to JSON
+        scanProgress: undefined,
+      },
+    })
+  }
+  return merged
 }
 
 export function getLastData(): AllData {
@@ -58,8 +82,8 @@ async function fetchAll(): Promise<AllData> {
     lifetime: null,
   }
 
-  // Accumulate lifetime stats
-  data.lifetime = updateLifetime(data)
+  // Pull lifetime totals from the authoritative SQLite store
+  data.lifetime = buildLifetime()
 
   // Persist to history DB
   if (data.claude) {

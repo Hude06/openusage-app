@@ -11,4 +11,7 @@ export const IPC = {
   LEADERBOARD_AUTH: 'leaderboard:auth',
   LEADERBOARD_SUBMIT: 'leaderboard:submit',
   LEADERBOARD_LOGOUT: 'leaderboard:logout',
+  LIFETIME_FORCE_RESCAN: 'lifetime:forceRescan',
+  LIFETIME_GET_BREAKDOWN: 'lifetime:getBreakdown',
+  LIFETIME_SCAN_PROGRESS: 'lifetime:scanProgress',
 } as const

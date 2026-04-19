@@ -7,6 +7,8 @@ import { StatRow } from '../components/StatRow'
 import { AuthBadge } from '../components/AuthBadge'
 import { SettingsModal } from '../components/SettingsModal'
 import { useHistory } from '../hooks/useHistory'
+import { useLifetimeScan } from '../hooks/useLifetimeScan'
+import { LifetimeScanBanner } from '../components/LifetimeScanBanner'
 import { projectCost } from '../lib/projection'
 import { Settings } from 'lucide-react'
 import { fmt, fmtCost } from '../lib/utils'
@@ -236,12 +238,22 @@ function ClaudeStats({ data, lifetime }: { data: ClaudeData; lifetime: LifetimeS
         <ModelRow label="SONNET" usedPercent={data.sonnet.usedPercent} />
       )}
       {lifetime && (
-        <StatRow
-          label="LIFETIME"
-          value={fmt(lifetime.claudeTokens + data.tokensToday)}
-          secondaryValue={fmtCost(lifetime.claudeCost + data.costToday)}
-          statusColor="var(--text-disabled)"
-        />
+        <>
+          <StatRow
+            label="LIFETIME"
+            value={fmt(lifetime.claudeTokens)}
+            secondaryValue="all time"
+            statusColor="var(--text-disabled)"
+          />
+          {lifetime.claudeCost > 0 && (
+            <StatRow
+              label="API VALUE"
+              value={fmtCost(lifetime.claudeCost)}
+              secondaryValue="at retail"
+              statusColor="var(--text-disabled)"
+            />
+          )}
+        </>
       )}
     </>
   )
@@ -267,11 +279,22 @@ function CodexStats({ data, lifetime }: { data: CodexData; lifetime: LifetimeSta
         <StatRow label="TODAY" value={`$${data.creditsUsedToday.toFixed(2)}`} />
       )}
       {lifetime && (
-        <StatRow
-          label="LIFETIME"
-          value={fmt(lifetime.codexTokens + data.creditsUsedToday)}
-          statusColor="var(--text-disabled)"
-        />
+        <>
+          <StatRow
+            label="LIFETIME"
+            value={fmt(lifetime.codexTokens)}
+            secondaryValue="all time"
+            statusColor="var(--text-disabled)"
+          />
+          {(lifetime.codexCost ?? 0) > 0 && (
+            <StatRow
+              label="API VALUE"
+              value={fmtCost(lifetime.codexCost ?? 0)}
+              secondaryValue="at retail"
+              statusColor="var(--text-disabled)"
+            />
+          )}
+        </>
       )}
     </>
   )
@@ -289,10 +312,11 @@ function useProjectedCost(resetsAt: string | null, windowMinutes: number, costSo
 
 export function Home({ data, lastUpdated }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const scanProgress = useLifetimeScan()
 
   // Listen for Cmd+, from application menu
   useEffect(() => {
-    return window.tokenPulse.onMenuOpenSettings(() => setSettingsOpen(true))
+    return window.tokenUsage.onMenuOpenSettings(() => setSettingsOpen(true))
   }, [])
 
   const timeAgo = React.useMemo(() => {
@@ -317,9 +341,18 @@ export function Home({ data, lastUpdated }: Props) {
 
       {/* Header */}
       <div className="fade-1 shrink-0 flex items-center justify-between px-5 pb-4">
-        <span className="label" style={{ color: 'var(--text-disabled)' }}>
-          OPEN USAGE
-        </span>
+        <div className="flex items-center gap-2">
+          <img
+            src="./logo.png"
+            alt=""
+            width={18}
+            height={18}
+            style={{ borderRadius: '4px', imageRendering: 'pixelated' }}
+          />
+          <span className="label" style={{ color: 'var(--text-disabled)' }}>
+            OPEN USAGE
+          </span>
+        </div>
         <button
           data-testid="settings-trigger"
           onClick={() => setSettingsOpen(true)}
@@ -329,6 +362,8 @@ export function Home({ data, lastUpdated }: Props) {
           <Settings size={14} strokeWidth={1.5} />
         </button>
       </div>
+
+      <LifetimeScanBanner progress={scanProgress} />
 
       {/* Body — scrollable */}
       <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3">

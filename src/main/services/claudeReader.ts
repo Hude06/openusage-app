@@ -16,7 +16,23 @@ interface ApiUsageResponse {
   seven_day_opus?: OAuthUsageWindow
 }
 
-async function fetchLiveUsage(token: string): Promise<ApiUsageResponse | null> {
+interface LiveUsageResult {
+  ok: boolean
+  data?: ApiUsageResponse
+  status?: number
+  retryAfterMs?: number
+  message?: string
+}
+
+// Backoff window — if set in the future, skip the network call entirely.
+let rateLimitUntilMs = 0
+
+async function fetchLiveUsage(token: string): Promise<LiveUsageResult> {
+  if (Date.now() < rateLimitUntilMs) {
+    const waitSec = Math.ceil((rateLimitUntilMs - Date.now()) / 1000)
+    return { ok: false, status: 429, retryAfterMs: rateLimitUntilMs - Date.now(), message: `Anthropic rate-limited this endpoint. Retrying in ${waitSec}s.` }
+  }
+
   return new Promise((resolve) => {
     const req = https.request(
       {
@@ -34,17 +50,38 @@ async function fetchLiveUsage(token: string): Promise<ApiUsageResponse | null> {
         let data = ''
         res.on('data', (chunk) => (data += chunk))
         res.on('end', () => {
-          if (res.statusCode !== 200) { resolve(null); return }
-          try {
-            resolve(JSON.parse(data))
-          } catch {
-            resolve(null)
+          const status = res.statusCode ?? 0
+          if (status === 200) {
+            try {
+              resolve({ ok: true, data: JSON.parse(data), status })
+            } catch {
+              resolve({ ok: false, status, message: 'Invalid response from Anthropic usage endpoint.' })
+            }
+            return
           }
+          if (status === 429) {
+            const retryHeader = res.headers['retry-after']
+            const retrySec = Array.isArray(retryHeader) ? Number(retryHeader[0]) : Number(retryHeader ?? NaN)
+            const backoffMs = Number.isFinite(retrySec) && retrySec > 0 ? retrySec * 1000 : 60_000
+            rateLimitUntilMs = Date.now() + backoffMs
+            resolve({
+              ok: false,
+              status,
+              retryAfterMs: backoffMs,
+              message: `Anthropic rate-limited this endpoint. Retrying in ${Math.ceil(backoffMs / 1000)}s.`,
+            })
+            return
+          }
+          if (status === 401 || status === 403) {
+            resolve({ ok: false, status, message: 'Claude auth rejected (token may be expired). Try Re-Read Claude Token in Settings.' })
+            return
+          }
+          resolve({ ok: false, status, message: `Anthropic returned HTTP ${status}.` })
         })
       }
     )
-    req.on('error', () => resolve(null))
-    req.on('timeout', () => { req.destroy(); resolve(null) })
+    req.on('error', (err) => resolve({ ok: false, message: `Network error: ${err.message}` }))
+    req.on('timeout', () => { req.destroy(); resolve({ ok: false, message: 'Request to Anthropic timed out.' }) })
     req.end()
   })
 }
@@ -146,8 +183,9 @@ export async function readClaudeData(claudeDataPath: string): Promise<ClaudeData
       authStatus = 'no_token'
       error = 'No Claude credentials found. Make sure Claude CLI is installed and logged in.'
     } else {
-      const usage = await fetchLiveUsage(token)
-      if (usage) {
+      const result = await fetchLiveUsage(token)
+      if (result.ok && result.data) {
+        const usage = result.data
         authStatus = 'ok'
         if (usage.five_hour) {
           session = {
@@ -181,9 +219,16 @@ export async function readClaudeData(claudeDataPath: string): Promise<ClaudeData
             label: 'Opus',
           }
         }
+      } else if (result.status === 429) {
+        // Rate limited — don't flag as auth error, keep last known state
+        authStatus = 'ok'
+        error = result.message ?? 'Rate limited.'
+      } else if (result.status === 401 || result.status === 403) {
+        authStatus = 'expired'
+        error = result.message ?? 'Claude auth rejected.'
       } else {
         authStatus = 'error'
-        error = 'Could not fetch live Claude usage data.'
+        error = result.message ?? 'Could not fetch live Claude usage data.'
       }
     }
   } catch (e) {

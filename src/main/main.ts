@@ -4,12 +4,14 @@ import { registerHandlers } from './ipc/handlers'
 import { startPolling, stopPolling, restartPolling, getLastData } from './services/pollScheduler'
 import { settingsStore } from './services/settingsStore'
 import { exchangeGithubCode } from './services/leaderboardService'
+import { startLifetime, stopLifetime } from './services/lifetime'
 import { createTray, updateTray, destroyTray } from './tray'
 import { IPC } from '../shared/ipc-channels'
 
 const isDev = process.env.ELECTRON_DEV === '1'
 
 let mainWindow: BrowserWindow | null = null
+let isQuitting = false
 
 function createWindow() {
   const settings = settingsStore.load()
@@ -48,7 +50,7 @@ function createWindow() {
       settingsStore.save({ windowBounds: b })
 
       const currentSettings = settingsStore.load()
-      if (currentSettings.minimizeToTray && process.platform === 'darwin') {
+      if (!isQuitting && currentSettings.minimizeToTray && process.platform === 'darwin') {
         e.preventDefault()
         mainWindow.hide()
         return
@@ -63,6 +65,7 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
+    startLifetime(mainWindow!).catch(() => {})
     startPolling(mainWindow!)
 
     // Create tray after window is ready
@@ -204,5 +207,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  isQuitting = true
   destroyTray()
+  stopLifetime()
 })

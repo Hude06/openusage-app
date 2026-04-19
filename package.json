@@ -1,5 +1,5 @@
 {
-  "name": "tokenpulse",
+  "name": "opentokenusage",
   "version": "1.0.0",
   "description": "Token usage monitor for Claude and Codex subscriptions",
   "main": "dist/main/main/main.js",
@@ -13,8 +13,9 @@
     "rebuild-native": "electron-rebuild -f -w better-sqlite3",
     "postinstall": "electron-rebuild -f -w better-sqlite3",
     "dist": "npm run build && electron-builder",
+    "dist:signed": "npm run build && set -a && . ./.env.local && set +a && electron-builder",
     "lint": "eslint src --ext .ts,.tsx",
-    "test": "vitest run",
+    "test": "npm rebuild better-sqlite3 --ignore-scripts=false && vitest run && npm run rebuild-native",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.main.json --noEmit"
   },
@@ -52,7 +53,7 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "better-sqlite3": "^9.4.3",
+    "better-sqlite3": "^11.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "electron-store": "^8.1.0",
@@ -62,23 +63,5 @@
     "react-router-dom": "^6.21.3",
     "recharts": "^2.10.3",
     "tailwind-merge": "^3.5.0"
-  },
-  "build": {
-    "appId": "com.tokenpulse.app",
-    "productName": "TokenPulse",
-    "directories": {
-      "output": "release"
-    },
-    "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "icon": "build/icon.icns"
-    },
-    "files": [
-      "dist/**/*",
-      "node_modules/**/*"
-    ]
   }
 }

@@ -6,6 +6,7 @@ import { getLastData, restartPolling } from '../services/pollScheduler'
 import { clearClaudeTokenCache } from '../services/claudeAuth'
 import { clearCodexTokenCache } from '../services/codexAuth'
 import { submitDailyUsage } from '../services/leaderboardService'
+import { forceRescan as forceRescanLifetime, getBreakdown as getLifetimeBreakdown } from '../services/lifetime'
 import type { BrowserWindow } from 'electron'
 import type { HistoryRange } from '../../shared/types'
 
@@ -71,6 +72,16 @@ export function registerHandlers(win: BrowserWindow) {
     const today = new Date().toISOString().slice(0, 10)
     settingsStore.save({ leaderboard: { ...leaderboard, lastSubmittedDate: today } })
     return { ok: true }
+  })
+
+  ipcMain.handle(IPC.LIFETIME_FORCE_RESCAN, async () => {
+    await forceRescanLifetime()
+    restartPolling(win)
+    return { ok: true }
+  })
+
+  ipcMain.handle(IPC.LIFETIME_GET_BREAKDOWN, (_event, range?: { startMs: number; endMs: number }) => {
+    return getLifetimeBreakdown(range)
   })
 
   ipcMain.handle(IPC.LEADERBOARD_LOGOUT, () => {

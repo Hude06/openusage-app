@@ -59,13 +59,13 @@ export function SettingsModal({ open, onClose }: Props) {
   const [status, setStatus] = useState<string | null>(null)
 
   useEffect(() => {
-    if (open) window.tokenPulse.getSettings().then(setSettings)
+    if (open) window.tokenUsage.getSettings().then(setSettings)
   }, [open])
 
   // Listen for OAuth result from main process
   useEffect(() => {
-    const unsubSuccess = window.tokenPulse.onLeaderboardAuthSuccess(() => {
-      window.tokenPulse.getSettings().then(setSettings)
+    const unsubSuccess = window.tokenUsage.onLeaderboardAuthSuccess(() => {
+      window.tokenUsage.getSettings().then(setSettings)
     })
 
     return () => {
@@ -75,7 +75,7 @@ export function SettingsModal({ open, onClose }: Props) {
 
   const save = async () => {
     if (!settings) return
-    await window.tokenPulse.saveSettings(settings)
+    await window.tokenUsage.saveSettings(settings)
     setStatus('[SAVED]')
     setTimeout(() => { setStatus(null); onClose() }, 900)
   }
@@ -185,7 +185,7 @@ export function SettingsModal({ open, onClose }: Props) {
                       </span>
                       <button
                         onClick={() => {
-                          window.tokenPulse.leaderboardLogout()
+                          window.tokenUsage.leaderboardLogout()
                           setSettings({
                             ...settings,
                             leaderboard: {
@@ -216,7 +216,7 @@ export function SettingsModal({ open, onClose }: Props) {
                       }
                     />
                     <button
-                      onClick={() => window.tokenPulse.openUrl('https://opentopenusage.com/leaderboard')}
+                      onClick={() => window.tokenUsage.openUrl('https://opentopenusage.com/leaderboard')}
                       className="w-full flex items-center justify-center gap-2 font-mono text-[11px] tracking-[0.06em] uppercase py-2 transition-colors"
                       style={{ color: 'var(--text-secondary)' }}
                     >
@@ -226,7 +226,7 @@ export function SettingsModal({ open, onClose }: Props) {
                   </div>
                 ) : (
                   <button
-                    onClick={() => window.tokenPulse.leaderboardAuth()}
+                    onClick={() => window.tokenUsage.leaderboardAuth()}
                     className="w-full flex items-center justify-center gap-2 font-mono text-[11px] tracking-[0.06em] uppercase py-3 px-4 transition-colors"
                     style={{
                       color: 'var(--text-secondary)',
@@ -246,8 +246,9 @@ export function SettingsModal({ open, onClose }: Props) {
                 <p className="label-sm">Credentials</p>
                 <div className="space-y-2">
                   {[
-                    { label: 'RE-READ CLAUDE TOKEN', action: () => window.tokenPulse.refreshClaudeAuth() },
-                    { label: 'RE-READ CODEX TOKEN', action: () => window.tokenPulse.refreshCodexAuth() },
+                    { label: 'RE-READ CLAUDE TOKEN', action: () => window.tokenUsage.refreshClaudeAuth() },
+                    { label: 'RE-READ CODEX TOKEN', action: () => window.tokenUsage.refreshCodexAuth() },
+                    { label: 'RESCAN LIFETIME TOKENS', action: () => window.tokenUsage.forceRescanLifetime() },
                   ].map(({ label, action }) => (
                     <button
                       key={label}

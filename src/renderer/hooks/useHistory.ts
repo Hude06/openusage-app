@@ -18,7 +18,7 @@ export function useHistory(
         startMs: now - DAY_MS,
         endMs: now,
       }
-      const data = await window.tokenPulse.getHistory(range)
+      const data = await window.tokenUsage.getHistory(range)
       setPoints(data)
     } catch {
       // Silently degrade — sparkline just stays empty
@@ -27,7 +27,7 @@ export function useHistory(
 
   useEffect(() => {
     fetch()
-    const unsub = window.tokenPulse.onDataUpdated(() => {
+    const unsub = window.tokenUsage.onDataUpdated(() => {
       fetch()
     })
     return unsub

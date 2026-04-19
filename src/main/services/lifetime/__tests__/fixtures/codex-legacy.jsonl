@@ -1,0 +1,2 @@
+{"timestamp":"2025-09-01T10:00:00.000Z","type":"session_meta","payload":{"id":"sess-legacy","model_provider":"openai"}}
+{"timestamp":"2025-09-01T10:00:05.000Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":500,"cached_input_tokens":100,"output_tokens":200,"reasoning_output_tokens":50,"total_tokens":750}}}}

@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc-channels'
-import type { AllData, AppSettings, HistoryRange, HistoryPoint, LeaderboardResponse } from '../shared/types'
+import type { AllData, AppSettings, HistoryRange, HistoryPoint } from '../shared/types'
+import type { LifetimeBreakdown, LifetimeScanProgress } from '../shared/lifetime-types'
 
 const api = {
   getAll: (): Promise<AllData> => ipcRenderer.invoke(IPC.USAGE_GET_ALL),
@@ -27,13 +28,17 @@ const api = {
   onDataUpdated: (cb: (data: AllData) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: AllData) => cb(data)
     ipcRenderer.on(IPC.USAGE_DATA_UPDATED, handler)
-    return () => ipcRenderer.removeListener(IPC.USAGE_DATA_UPDATED, handler)
+    return (): void => {
+      ipcRenderer.removeListener(IPC.USAGE_DATA_UPDATED, handler)
+    }
   },
 
   onMenuOpenSettings: (cb: () => void) => {
     const handler = () => cb()
     ipcRenderer.on('menu:openSettings', handler)
-    return () => ipcRenderer.removeListener('menu:openSettings', handler)
+    return (): void => {
+      ipcRenderer.removeListener('menu:openSettings', handler)
+    }
   },
 
   leaderboardAuth: (): Promise<{ ok: boolean }> =>
@@ -45,25 +50,45 @@ const api = {
   leaderboardLogout: (): Promise<{ ok: boolean }> =>
     ipcRenderer.invoke(IPC.LEADERBOARD_LOGOUT),
 
+  forceRescanLifetime: (): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke(IPC.LIFETIME_FORCE_RESCAN),
+
+  getLifetimeBreakdown: (range?: { startMs: number; endMs: number }): Promise<LifetimeBreakdown> =>
+    ipcRenderer.invoke(IPC.LIFETIME_GET_BREAKDOWN, range),
+
+  onLifetimeScanProgress: (cb: (progress: LifetimeScanProgress) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, progress: LifetimeScanProgress) => cb(progress)
+    ipcRenderer.on(IPC.LIFETIME_SCAN_PROGRESS, handler)
+    return (): void => {
+      ipcRenderer.removeListener(IPC.LIFETIME_SCAN_PROGRESS, handler)
+    }
+  },
+
   onLeaderboardOAuthCallback: (cb: (code: string) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, code: string) => cb(code)
     ipcRenderer.on('leaderboard:oauthCallback', handler)
-    return () => ipcRenderer.removeListener('leaderboard:oauthCallback', handler)
+    return (): void => {
+      ipcRenderer.removeListener('leaderboard:oauthCallback', handler)
+    }
   },
 
   onLeaderboardAuthSuccess: (cb: (result: { userId: string; login: string; avatarUrl: string }) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, result: { userId: string; login: string; avatarUrl: string }) => cb(result)
     ipcRenderer.on('leaderboard:authSuccess', handler)
-    return () => ipcRenderer.removeListener('leaderboard:authSuccess', handler)
+    return (): void => {
+      ipcRenderer.removeListener('leaderboard:authSuccess', handler)
+    }
   },
 
   onLeaderboardAuthError: (cb: (error: string) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, error: string) => cb(error)
     ipcRenderer.on('leaderboard:authError', handler)
-    return () => ipcRenderer.removeListener('leaderboard:authError', handler)
+    return (): void => {
+      ipcRenderer.removeListener('leaderboard:authError', handler)
+    }
   },
 }
 
-contextBridge.exposeInMainWorld('tokenPulse', api)
+contextBridge.exposeInMainWorld('tokenUsage', api)
 
-export type TokenPulseAPI = typeof api
+export type TokenUsageAPI = typeof api

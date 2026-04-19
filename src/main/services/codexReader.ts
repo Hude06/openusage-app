@@ -29,7 +29,7 @@ async function fetchLiveUsage(token: string): Promise<WhamUsage | null> {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
-          'User-Agent': 'TokenPulse/1.0',
+          'User-Agent': 'OpenTokenUsage/1.0',
           Accept: 'application/json',
         },
         timeout: 10000,
