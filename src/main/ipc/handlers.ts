@@ -12,6 +12,10 @@ import type { HistoryRange } from '../../shared/types'
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID ?? ''
 
+function getCurrentSubmissionHourKey(): string {
+  return new Date().toISOString().slice(0, 13)
+}
+
 export function registerHandlers(win: BrowserWindow) {
   ipcMain.handle(IPC.USAGE_GET_ALL, () => {
     return getLastData()
@@ -85,8 +89,13 @@ export function registerHandlers(win: BrowserWindow) {
     }
     const data = getLastData()
     await submitDailyUsage(leaderboard.githubToken, data)
-    const today = new Date().toISOString().slice(0, 10)
-    settingsStore.save({ leaderboard: { ...leaderboard, lastSubmittedDate: today } })
+    settingsStore.save({
+      leaderboard: {
+        ...leaderboard,
+        lastSubmittedHour: getCurrentSubmissionHourKey(),
+        lastSubmittedDate: null,
+      },
+    })
     return { ok: true }
   })
 
@@ -110,6 +119,7 @@ export function registerHandlers(win: BrowserWindow) {
         githubLogin: null,
         githubAvatarUrl: null,
         userId: null,
+        lastSubmittedHour: null,
         lastSubmittedDate: null,
       },
     })

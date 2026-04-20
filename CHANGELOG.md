@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.1
+
+- Leaderboard submission cadence changed to once per hour (UTC) instead of once per day
+- GitHub OAuth config fallback improvements for packaged app auth flow
+- Version bump to align signed desktop release artifacts
+
 ## v1.0.0
 
 Initial release.

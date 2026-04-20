@@ -1,6 +1,6 @@
 {
   "name": "opentokenusage",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Token usage monitor for Claude and Codex subscriptions",
   "main": "dist/main/main/main.js",
   "scripts": {

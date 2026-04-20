@@ -195,6 +195,7 @@ export function SettingsModal({ open, onClose }: Props) {
                               githubLogin: null,
                               githubAvatarUrl: null,
                               userId: null,
+                              lastSubmittedHour: null,
                               lastSubmittedDate: null,
                             },
                           })
@@ -284,7 +285,7 @@ export function SettingsModal({ open, onClose }: Props) {
 
               {/* Version */}
               <p className="label-sm text-center" style={{ color: 'var(--text-disabled)' }}>
-                OPEN USAGE V1.0.0
+                OPEN USAGE V1.0.1
               </p>
             </div>
           ) : (

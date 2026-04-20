@@ -409,7 +409,7 @@ export function Home({ data, lastUpdated }: Props) {
           {timeAgo ? `UPDATED ${timeAgo}` : '—'}
         </span>
         <span className="label-sm" style={{ color: 'var(--text-disabled)' }}>
-          V1.0.0
+          V1.0.1
         </span>
       </div>
 

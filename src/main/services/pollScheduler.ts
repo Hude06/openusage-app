@@ -12,6 +12,20 @@ import type { AllData, LifetimeStats } from '../../shared/types'
 let intervalId: ReturnType<typeof setInterval> | null = null
 let lastData: AllData = { claude: null, codex: null, lifetime: null }
 
+function getCurrentSubmissionHourKey(): string {
+  // Use UTC to avoid local timezone drift in cross-region comparisons.
+  return new Date().toISOString().slice(0, 13)
+}
+
+function getLastSubmittedHour(leaderboard: { lastSubmittedHour: string | null; lastSubmittedDate?: string | null }): string | null {
+  if (leaderboard.lastSubmittedHour) return leaderboard.lastSubmittedHour
+  if (leaderboard.lastSubmittedDate) {
+    // v1.0.0 stored day-only keys; migrate to the first UTC hour of that day.
+    return `${leaderboard.lastSubmittedDate}T00`
+  }
+  return null
+}
+
 function buildLifetime(): LifetimeStats {
   const settings = settingsStore.load()
   const fallback = settings.lifetime ?? {
@@ -107,11 +121,15 @@ async function fetchAll(): Promise<AllData> {
   // Auto-submit to leaderboard if enabled
   const { leaderboard } = settings
   if (leaderboard?.enabled && leaderboard.githubToken) {
-    const today = new Date().toISOString().slice(0, 10)
-    if (leaderboard.lastSubmittedDate !== today) {
+    const currentHour = getCurrentSubmissionHourKey()
+    if (getLastSubmittedHour(leaderboard) !== currentHour) {
       submitDailyUsage(leaderboard.githubToken, data)
         .then(() => settingsStore.save({
-          leaderboard: { ...leaderboard, lastSubmittedDate: today },
+          leaderboard: {
+            ...leaderboard,
+            lastSubmittedHour: currentHour,
+            lastSubmittedDate: null,
+          },
         }))
         .catch(() => {}) // silent failure, retry next cycle
     }

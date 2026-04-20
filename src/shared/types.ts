@@ -90,7 +90,10 @@ export interface LeaderboardSettings {
   githubLogin: string | null
   githubAvatarUrl: string | null
   userId: string | null
-  lastSubmittedDate: string | null
+  lastSubmittedHour: string | null
+  // Legacy field used by <= v1.0.0 (once-per-day submission guard).
+  // Kept optional so old settings files remain readable.
+  lastSubmittedDate?: string | null
 }
 
 export interface LeaderboardEntry {

@@ -29,7 +29,7 @@ const defaults: AppSettings = {
     githubLogin: null,
     githubAvatarUrl: null,
     userId: null,
-    lastSubmittedDate: null,
+    lastSubmittedHour: null,
   },
 }
 
@@ -37,7 +37,13 @@ function load(): AppSettings {
   try {
     if (fs.existsSync(SETTINGS_PATH)) {
       const raw = fs.readFileSync(SETTINGS_PATH, 'utf8')
-      return { ...defaults, ...JSON.parse(raw) }
+      const parsed = JSON.parse(raw) as Partial<AppSettings>
+      return {
+        ...defaults,
+        ...parsed,
+        lifetime: { ...defaults.lifetime, ...(parsed.lifetime ?? {}) },
+        leaderboard: { ...defaults.leaderboard, ...(parsed.leaderboard ?? {}) },
+      }
     }
   } catch {
     // ignore
