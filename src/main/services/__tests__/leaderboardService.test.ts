@@ -10,6 +10,7 @@ vi.mock('https', () => ({
 import https from 'https'
 import {
   exchangeGithubCode,
+  getGithubOAuthConfig,
   submitDailyUsage,
   getLeaderboard,
 } from '../leaderboardService'
@@ -74,6 +75,22 @@ describe('leaderboardService', () => {
       setupMockRequest(200, { success: false, error: 'Exchange failed' })
 
       await expect(exchangeGithubCode('bad_code')).rejects.toThrow('Exchange failed')
+    })
+  })
+
+  describe('getGithubOAuthConfig', () => {
+    it('fetches GitHub OAuth client id config', async () => {
+      setupMockRequest(200, {
+        success: true,
+        data: { clientId: 'test-client-id' },
+      })
+
+      const result = await getGithubOAuthConfig()
+
+      expect(result.clientId).toBe('test-client-id')
+      const callOpts = mockRequest.mock.calls[0][0] as unknown as { method: string; path: string }
+      expect(callOpts.method).toBe('GET')
+      expect(callOpts.path).toBe('/api/auth/github/config')
     })
   })
 

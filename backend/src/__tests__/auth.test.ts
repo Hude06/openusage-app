@@ -15,6 +15,15 @@ describe('POST /api/auth/github', () => {
     globalThis.fetch = originalFetch
   })
 
+  it('returns GitHub OAuth client id config', async () => {
+    const env = createMockEnv()
+    const res = await app.request('/api/auth/github/config', {}, env)
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.success).toBe(true)
+    expect(body.data.clientId).toBe('test-client-id')
+  })
+
   it('returns 400 when code is missing', async () => {
     const env = createMockEnv()
     const res = await app.request('/api/auth/github', {

@@ -1,13 +1,17 @@
 import https from 'https'
 import type { AllData, LeaderboardResponse } from '../../shared/types'
 
-const API_HOSTNAME = 'api.openusage.app'
+const API_HOSTNAME = 'api.opentokenusage.com'
 
 interface AuthResult {
   userId: string
   login: string
   avatarUrl: string
   token: string
+}
+
+interface GithubOAuthConfig {
+  clientId: string
 }
 
 function request<T>(
@@ -67,6 +71,18 @@ export async function exchangeGithubCode(code: string): Promise<AuthResult> {
     },
     JSON.stringify({ code })
   )
+}
+
+export async function getGithubOAuthConfig(): Promise<GithubOAuthConfig> {
+  return request<GithubOAuthConfig>({
+    hostname: API_HOSTNAME,
+    path: '/api/auth/github/config',
+    method: 'GET',
+    headers: {
+      'User-Agent': 'OpenUsage/1.0',
+    },
+    timeout: 10000,
+  })
 }
 
 export async function submitDailyUsage(

@@ -15,6 +15,12 @@ if (!teamId) {
 module.exports = {
   appId: 'com.opentokenusage.app',
   productName: 'Open Token Usage',
+  protocols: [
+    {
+      name: 'Open Usage OAuth',
+      schemes: ['openusage'],
+    },
+  ],
   directories: {
     output: 'release',
   },

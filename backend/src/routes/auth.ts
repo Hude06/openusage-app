@@ -3,6 +3,19 @@ import type { Env } from '../types'
 
 const auth = new Hono<{ Bindings: Env }>()
 
+auth.get('/github/config', async (c) => {
+  if (!c.env.GITHUB_CLIENT_ID) {
+    return c.json({ success: false, error: 'GitHub OAuth is not configured' }, 500)
+  }
+
+  return c.json({
+    success: true,
+    data: {
+      clientId: c.env.GITHUB_CLIENT_ID,
+    },
+  })
+})
+
 auth.post('/github', async (c) => {
   const body = await c.req.json<{ code?: string }>().catch(() => ({}))
 

@@ -216,7 +216,7 @@ export function SettingsModal({ open, onClose }: Props) {
                       }
                     />
                     <button
-                      onClick={() => window.tokenUsage.openUrl('https://opentopenusage.com/leaderboard')}
+                      onClick={() => window.tokenUsage.openUrl('https://opentokenusage.com/leaderboard')}
                       className="w-full flex items-center justify-center gap-2 font-mono text-[11px] tracking-[0.06em] uppercase py-2 transition-colors"
                       style={{ color: 'var(--text-secondary)' }}
                     >

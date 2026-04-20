@@ -5,7 +5,7 @@ import { getRange } from '../services/historyDb'
 import { getLastData, restartPolling } from '../services/pollScheduler'
 import { clearClaudeTokenCache } from '../services/claudeAuth'
 import { clearCodexTokenCache } from '../services/codexAuth'
-import { submitDailyUsage } from '../services/leaderboardService'
+import { getGithubOAuthConfig, submitDailyUsage } from '../services/leaderboardService'
 import { forceRescan as forceRescanLifetime, getBreakdown as getLifetimeBreakdown } from '../services/lifetime'
 import type { BrowserWindow } from 'electron'
 import type { HistoryRange } from '../../shared/types'
@@ -55,8 +55,24 @@ export function registerHandlers(win: BrowserWindow) {
     return { ok: true }
   })
 
-  ipcMain.handle(IPC.LEADERBOARD_AUTH, () => {
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=read:user&redirect_uri=openusage://callback`
+  ipcMain.handle(IPC.LEADERBOARD_AUTH, async () => {
+    let clientId = GITHUB_CLIENT_ID
+
+    // In packaged apps, process.env may be empty; fetch from backend config.
+    if (!clientId) {
+      try {
+        const cfg = await getGithubOAuthConfig()
+        clientId = cfg.clientId
+      } catch {
+        return { ok: false, error: 'GitHub OAuth is not configured' }
+      }
+    }
+
+    if (!clientId) {
+      return { ok: false, error: 'GitHub OAuth is not configured' }
+    }
+
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(clientId)}&scope=read:user&redirect_uri=openusage://callback`
     shell.openExternal(authUrl)
     return { ok: true }
   })
